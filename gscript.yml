@@ -1,0 +1,84 @@
+name: Label & comment issues
+
+on:
+  issues:
+    types:
+      - reopened
+      - opened
+      - closed   # 👈 lisätty
+
+  pull_request_target:
+    types:
+      - opened   # 👈 lisätty PR trigger
+
+jobs:
+  label_issues:
+    if: github.event_name == 'issues' && github.event.action != 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: attach label to issues
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.addLabels({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: ["issue", "fix"]
+            })
+
+      - name: Comment on new issue
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          issue-number: ${{ github.event.issue.number }}
+          body: |
+            Thanks for opening this issue! We'll take a look as soon as possible.
+
+  issue_closed:
+    if: github.event_name == 'issues' && github.event.action == 'closed'
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+    steps:
+      - name: Comment when issue is closed
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: "The issue is now resolved."
+            });
+
+  first_pr:
+    if: github.event_name == 'pull_request_target'
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: read
+      issues: write
+    steps:
+      - name: Congratulate first-time contributor
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const creator = context.payload.sender.login;
+
+            const prs = await github.rest.pulls.list({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'all'
+            });
+
+            const userPRs = prs.data.filter(pr => pr.user.login === creator);
+
+            if (userPRs.length === 1) {
+              await github.rest.issues.createComment({
+                issue_number: context.issue.number,
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                body: "🎉 Congratulations on your first pull request!"
+              });
+            }
