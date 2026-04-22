@@ -5,11 +5,11 @@ on:
     types:
       - reopened
       - opened
-      - closed   # 👈 lisätty
+      - closed   
 
   pull_request_target:
     types:
-      - opened   # 👈 lisätty PR trigger
+      - opened   
 
 jobs:
   label_issues:
@@ -79,6 +79,6 @@ jobs:
                 issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: "🎉 Congratulations on your first pull request!"
+                body: "Congratulations on your first pull request!"
               });
             }
