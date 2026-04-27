@@ -5,11 +5,11 @@ on:
     types:
       - reopened
       - opened
-      - closed   
+      - closed
 
   pull_request_target:
     types:
-      - opened   
+      - opened
 
 jobs:
   label_issues:
@@ -65,20 +65,19 @@ jobs:
         with:
           script: |
             const creator = context.payload.sender.login;
+            const prNumber = context.payload.pull_request.number;
 
-            const prs = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'all'
+            // More reliable "first PR" check than pulls.list (avoids pagination issues)
+            const result = await github.rest.search.issuesAndPullRequests({
+              q: `repo:${context.repo.owner}/${context.repo.repo} is:pr author:${creator}`,
+              per_page: 1,
             });
 
-            const userPRs = prs.data.filter(pr => pr.user.login === creator);
-
-            if (userPRs.length === 1) {
+            if (result.data.total_count === 1) {
               await github.rest.issues.createComment({
-                issue_number: context.issue.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
+                issue_number: prNumber,
                 body: "Congratulations on your first pull request!"
               });
             }
