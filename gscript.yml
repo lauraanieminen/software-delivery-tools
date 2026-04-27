@@ -3,13 +3,12 @@ name: Label & comment issues
 on:
   issues:
     types:
-      - reopened
       - opened
-      - closed   
-
+      - reopened
+      - closed
   pull_request_target:
     types:
-      - opened   
+      - opened
 
 jobs:
   label_issues:
@@ -18,19 +17,19 @@ jobs:
     permissions:
       issues: write
     steps:
-      - name: attach label to issues
+      - name: Attach label to issues
         uses: actions/github-script@v6
         with:
           script: |
-            github.rest.issues.addLabels({
+            await github.rest.issues.addLabels({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               labels: ["issue", "fix"]
-            })
+            });
 
       - name: Comment on new issue
-        uses: peter-evans/create-or-update-comment@v1
+        uses: peter-evans/create-or-update-comment@v4
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
@@ -46,7 +45,7 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            github.rest.issues.createComment({
+            await github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -64,21 +63,11 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
-            const creator = context.payload.sender.login;
-
-            const prs = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              state: 'all'
-            });
-
-            const userPRs = prs.data.filter(pr => pr.user.login === creator);
-
-            if (userPRs.length === 1) {
+            if (context.payload.pull_request.author_association === "FIRST_TIME_CONTRIBUTOR") {
               await github.rest.issues.createComment({
-                issue_number: context.issue.number,
+                issue_number: context.payload.pull_request.number,
                 owner: context.repo.owner,
                 repo: context.repo.repo,
-                body: "Congratulations on your first pull request!"
+                body: "pull request complete"
               });
             }
