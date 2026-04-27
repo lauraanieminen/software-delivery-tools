@@ -33,7 +33,7 @@ jobs:
         with:
           issue-number: ${{ github.event.issue.number }}
           body: |
-            Thanks for opening this issue! We'll take a look as soon as possible.
+            Issue open
 
   issue_closed:
     if: github.event_name == 'issues' && github.event.action == 'closed'
